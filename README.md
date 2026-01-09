@@ -33,7 +33,8 @@ This project simulates a simplified issue tracking system (similar to Jira/GitHu
 - **Migrations**: Alembic
 - **Testing**: pytest
 
-The project intentionally avoids overengineering and advanced patterns in favor of clarity and correctness.
+“PostgreSQL is hosted on Supabase for ease of development; all schema management, transactions, and business logic are implemented in the FastAPI backend.”
+
 
 ---
 
