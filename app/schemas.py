@@ -10,7 +10,7 @@ class IssueResponse(BaseModel):
     title: str
     description: str | None
     status: str
-    priority: str | None
+    priority: str 
     created_at: datetime
 
     model_config = {
