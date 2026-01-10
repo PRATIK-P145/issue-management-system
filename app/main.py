@@ -6,6 +6,7 @@ from app.deps import get_db
 from app.models import Issue
 from app.schemas import IssueCreate, IssueResponse
 from fastapi import HTTPException
+from typing import Optional
 
 app = FastAPI(title="Issue Management System")
 
@@ -38,14 +39,25 @@ def get_issue(issue_id: int, db: Session = Depends(get_db)):
 def list_issues(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=50),
+    status: Optional[str] = None,
+    priority: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
     offset = (page - 1) * limit
 
-    total = db.query(Issue).count()
+    query = db.query(Issue)
+
+    # filters (only if provided)
+    if status:
+        query = query.filter(Issue.status == status)
+
+    if priority:
+        query = query.filter(Issue.priority == priority)
+
+    total = query.count()
 
     issues = (
-        db.query(Issue)
+        query
         .order_by(Issue.created_at.desc())
         .offset(offset)
         .limit(limit)
@@ -62,5 +74,3 @@ def list_issues(
             "pages": pages,
         },
     }
-
-
