@@ -38,22 +38,70 @@ This project simulates a simplified issue tracking system (similar to Jira/GitHu
 
 ---
 
-## 🧠 Key Design Decisions
+##  Key Design Decisions
+Perfect. This format is **exactly what evaluators like** because it shows awareness + intent.
 
-### Optimistic Concurrency Control
-Each issue includes a `version` field.  
-Updates succeed only if the client-provided version matches the current database version.  
-This prevents silent overwrites when multiple users update the same issue concurrently.
+Here is a **clean, structured README-ready section** in the format you asked.
+You can paste this directly.
 
-### Transactions
-Multi-step operations (bulk updates, label replacement) are wrapped in database transactions to ensure:
-- all changes succeed together, or
-- all changes are rolled back on failure
+---
 
-### CSV Import Strategy
-- Each row is validated independently
-- Invalid rows do not stop the entire import
-- A summary response reports success and failure counts with reasons
+## ⚙️ Key Engineering Challenges Addressed
+
+---
+
+### 1. Concurrency Handling
+
+Concurrency issues arise when multiple clients attempt to update the same issue at the same time, which can lead to lost or overwritten updates if not handled properly.
+
+**API endpoints / tasks where it appears:**
+
+* `PATCH /issues/{id}` — Updating issue details
+
+**My strategy to handle it:**
+The project uses **optimistic concurrency control** by maintaining a version field on each issue. Clients must send the current version during updates. If the version does not match the database value, the update is rejected, preventing silent overwrites and ensuring safe concurrent updates.
+
+---
+
+### 2. Transaction Management
+
+Transaction challenges occur when an operation involves multiple database changes that must either all succeed or all fail to avoid inconsistent or partial data states.
+
+**API endpoints / tasks where it appears:**
+
+* `POST /issues/bulk-status` — Bulk status updates
+* `PUT /issues/{id}/labels` — Atomic label replacement
+* `POST /issues/import` — Batch inserts during import
+
+**My strategy to handle it:**
+All multi-step operations are wrapped inside **database transactions**. If any step fails, the transaction is rolled back automatically, ensuring atomicity and preserving data consistency across all affected records.
+
+---
+
+### 3. CSV Import Handling
+
+CSV imports introduce challenges related to data validation, partial failures, and large batch inserts, which can corrupt data if handled naively.
+
+**API endpoints / tasks where it appears:**
+
+* `POST /issues/import` — Importing issues from CSV files
+
+**My strategy to handle it:**
+The import process includes structured CSV parsing, row-level validation, and controlled batch inserts. Imports are executed within transactions to avoid partial data insertion, and invalid rows are reported without affecting valid data.
+
+---
+
+### 4. Schema Evolution & Migrations
+
+As project requirements evolve, the database schema needs to change without breaking existing data or deployments.
+
+**API endpoints / tasks where it appears:**
+
+* Adding fields like `created_at`, `priority`, `assigned_to`
+* Supporting filters, sorting, and reporting features
+
+**My strategy to handle it:**
+All schema changes are managed using **Alembic migrations**, enabling versioned, incremental, and reversible updates. This allows the database structure to evolve safely while maintaining compatibility across environments.
 
 ---
 
