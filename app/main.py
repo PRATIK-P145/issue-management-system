@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends,Query
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine
@@ -33,3 +33,34 @@ def get_issue(issue_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Issue not found")
 
     return issue
+
+@app.get("/issues")
+def list_issues(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    offset = (page - 1) * limit
+
+    total = db.query(Issue).count()
+
+    issues = (
+        db.query(Issue)
+        .order_by(Issue.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    pages = (total + limit - 1) // limit
+
+    return {
+        "data": issues,
+        "meta": {
+            "total": total,
+            "page": page,
+            "pages": pages,
+        },
+    }
+
+
