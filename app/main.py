@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from typing import Optional
 
 from app.schemas import UserCreate, UserResponse
-from app.crud import create_user, get_users, list_issues
+from app.crud import create_user, get_users, list_issues, delete_issue
 from app.models import User
 
 from app.schemas import IssuePatch
@@ -58,3 +58,10 @@ def update_issue(
     db: Session = Depends(get_db)
 ):
     return patch_issue(db, issue_id, patch)
+
+@app.delete("/issues/{issue_id}", status_code=204)
+def delete_issue_endpoint(issue_id: int, db: Session = Depends(get_db)):
+    deleted = delete_issue(db, issue_id)
+
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Issue not found")

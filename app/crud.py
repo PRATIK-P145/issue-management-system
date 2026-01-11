@@ -119,3 +119,13 @@ def patch_issue(db: Session, issue_id: int, patch: IssuePatch):
     db.refresh(issue)
 
     return issue
+
+def delete_issue(db: Session, issue_id: int):
+    issue = db.query(Issue).filter(Issue.id == issue_id).first()
+
+    if not issue:
+        return None
+
+    db.delete(issue)
+    db.commit()
+    return True

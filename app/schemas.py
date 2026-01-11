@@ -43,6 +43,7 @@ class IssueResponse(BaseModel):
     priority: str
     version: int
     created_at: datetime
+    updated_at: datetime
     assignee: UserResponse | None = None
 
     model_config = {
