@@ -22,14 +22,24 @@ def root():
 
 @app.post("/issues", response_model=IssueResponse)
 def create_issue(issue: IssueCreate, db: Session = Depends(get_db)):
+    if issue.assigned_to is not None:
+        user = db.query(User).filter(User.id == issue.assigned_to).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="Assigned user not found")
+
     new_issue = Issue(
         title=issue.title,
-        description=issue.description
+        description=issue.description,
+        status=issue.status,
+        priority=issue.priority,
+        assigned_to=issue.assigned_to,
     )
+
     db.add(new_issue)
     db.commit()
     db.refresh(new_issue)
     return new_issue
+
 
 @app.get("/issues/{issue_id}", response_model=IssueResponse)
 def get_issue(issue_id: int, db: Session = Depends(get_db)):

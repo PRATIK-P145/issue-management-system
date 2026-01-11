@@ -4,6 +4,10 @@ from datetime import datetime
 class IssueCreate(BaseModel):
     title: str
     description: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    assigned_to: int | None = None
+
 
 class UserCreate(BaseModel):
     name: str
