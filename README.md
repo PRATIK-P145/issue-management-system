@@ -1,97 +1,55 @@
+
+
 # Issue Tracker API
 
-A backend service for managing issues, comments, labels, and reports — built with a strong focus on data consistency, concurrency safety, and transactional correctness.
+A backend service for managing issues with a strong focus on **data consistency, concurrency safety, and clean API design**.
 
-This project simulates a simplified issue tracking system (similar to Jira/GitHub Issues) and is designed to demonstrate real-world backend engineering practices.
+---
+## Contents
+
+- [Key Features](#key-features)
+- [Tech Stack](#tech-stack)
+- [Implemented Features](#implemented-features)
+- [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
+- [Project Setup](#project-setup)
+- [Pending / Future Work](#pending--future-work)
+- [Evaluation Alignment](#evaluation-alignment)
+- [Author](#author)
 
 ---
 
-## 🚀 Features
+## Key  Features
 
-### Core Functionality
-- Create, retrieve, update, and list issues
-- Optimistic concurrency control using versioning
-- Add comments to issues with validation
-- Assign and replace labels atomically
-- Transactional bulk status updates
-- CSV-based bulk issue import with row-level validation
-- Analytical reports for issue handling
+### 1. Optimistic Concurrency Control
 
-### Reliability & Safety
-- PostgreSQL constraints and indexes
-- Transactional operations to prevent partial updates
-- Clear error handling and HTTP status codes
-- Minimal but meaningful automated tests
+Used a `version` field on the Issue model.
+
+* Clients must send the latest version when updating
+* If the version does not match the database value:
+
+  * Update is rejected with **409 Conflict**
+* Prevents silent overwrites during concurrent edits
 
 ---
 
-## 🛠 Tech Stack
+### 2. Clean API Design
 
-- **Backend Framework**: FastAPI
-- **Database**: PostgreSQL
-- **ORM**: SQLAlchemy (minimal usage)
-- **Migrations**: Alembic
-- **Testing**: pytest
-
-“PostgreSQL is hosted on Supabase for ease of development; all schema management, transactions, and business logic are implemented in the FastAPI backend.”
+* PATCH supports **partial updates only**
+* No accidental overwrites
+* Clear separation between request models and DB models
 
 
 ---
 
-##  Key Design Decisions
-Perfect. This format is **exactly what evaluators like** because it shows awareness + intent.
+### 3. Auditability
 
-Here is a **clean, structured README-ready section** in the format you asked.
-You can paste this directly.
-
----
-
-## ⚙️ Key Engineering Challenges Addressed
+* `created_at` and `updated_at` tracked automatically
+* `updated_at` changes only when meaningful updates occur
 
 ---
 
-### 1. Concurrency Handling
-
-Concurrency issues arise when multiple clients attempt to update the same issue at the same time, which can lead to lost or overwritten updates if not handled properly.
-
-**API endpoints / tasks where it appears:**
-
-* `PATCH /issues/{id}` — Updating issue details
-
-**My strategy to handle it:**
-The project uses **optimistic concurrency control** by maintaining a version field on each issue. Clients must send the current version during updates. If the version does not match the database value, the update is rejected, preventing silent overwrites and ensuring safe concurrent updates.
-
----
-
-### 2. Transaction Management
-
-Transaction challenges occur when an operation involves multiple database changes that must either all succeed or all fail to avoid inconsistent or partial data states.
-
-**API endpoints / tasks where it appears:**
-
-* `POST /issues/bulk-status` — Bulk status updates
-* `PUT /issues/{id}/labels` — Atomic label replacement
-* `POST /issues/import` — Batch inserts during import
-
-**My strategy to handle it:**
-All multi-step operations are wrapped inside **database transactions**. If any step fails, the transaction is rolled back automatically, ensuring atomicity and preserving data consistency across all affected records.
-
----
-
-### 3. CSV Import Handling
-
-CSV imports introduce challenges related to data validation, partial failures, and large batch inserts, which can corrupt data if handled naively.
-
-**API endpoints / tasks where it appears:**
-
-* `POST /issues/import` — Importing issues from CSV files
-
-**My strategy to handle it:**
-The import process includes structured CSV parsing, row-level validation, and controlled batch inserts. Imports are executed within transactions to avoid partial data insertion, and invalid rows are reported without affecting valid data.
-
----
-
-### 4. Schema Evolution & Migrations
+### 4.Schema Evolution & Migrations
 
 As project requirements evolve, the database schema needs to change without breaking existing data or deployments.
 
@@ -104,74 +62,262 @@ As project requirements evolve, the database schema needs to change without brea
 All schema changes are managed using **Alembic migrations**, enabling versioned, incremental, and reversible updates. This allows the database structure to evolve safely while maintaining compatibility across environments.
 
 ---
+##  Tech Stack
 
-## 📂 Project Structure
+- **Backend Framework**: FastAPI
+- **Database**: PostgreSQL
+- **ORM**: SQLAlchemy (minimal usage)
+- **Migrations**: Alembic
+- **Testing**: pytest
+
+“PostgreSQL is hosted on Supabase for ease of development; all schema management, transactions, and business logic are implemented in the FastAPI backend.”
+
+
+---
+
+##  Implemented Features (Completed)
+
+### Issue Management
+
+* Create, retrieve, list, and **hard delete** issues
+* List issues with **pagination** and **status/priority filters**
+* Audit fields: `created_at`, `updated_at` (auto-updated on PATCH)
+
+### Safe Updates (Concurrency Control)
+
+* `PATCH /issues/{id}` supports **partial updates**
+* **Optimistic locking** via `version` field
+* Returns **409 Conflict** on version mismatch
+* Prevents lost updates in concurrent requests
+
+### Data Integrity & Validation
+
+* Validates `assigned_to` user existence
+* Clear error handling (`400`, `404`, `409`)
+* Strong request/response validation using Pydantic
+
+### Code Structure & Quality
+
+* Clean separation of concerns:
+
+  * `main.py` → routing
+  * `crud.py` → database logic
+  * `schemas.py` → validation
+* Minimal, readable SQLAlchemy usage
+
+---
+
+## Project Structure
+
 ```
 app/
-├── main.py      # FastAPI application & routes
-├── database.py  # Database connection & session
-├── models.py    # SQLAlchemy models
-├── schemas.py   # Request/response schemas
-├── crud.py      # Database operations
-└── tests/       # Minimal automated tests
+├── main.py       # FastAPI routes
+├── database.py   # DB session & engine
+├── models.py     # SQLAlchemy models
+├── schemas.py    # Pydantic schemas
+├── crud.py       # Database operations
+└── tests/        # (minimal tests)
 ```
 
 ---
 
-## 🔌 API Endpoints (Overview)
+##  API Endpoints (Current)
 
 ### Issues
-- `POST /issues` — Create issue
-- `GET /issues` — List issues (filters + pagination)
-- `GET /issues/{id}` — Get issue with comments & labels
-- `PATCH /issues/{id}` — Update issue with version check
-- `POST /issues/bulk-status` — Transactional bulk update
-- `POST /issues/import` — CSV issue import
 
-### Comments
-- `POST /issues/{id}/comments` — Add comment
-
-### Labels
-- `PUT /issues/{id}/labels` — Replace labels atomically
-
-### Reports
-- `GET /reports/top-assignees`
-- `GET /reports/latency`
+* `POST /issues` — Create issue
+* `GET /issues` — List issues (pagination + filters)
+* `GET /issues/{id}` — Get issue by ID
+* `PATCH /issues/{id}` — Partial update with version check
+* `DELETE /issues/{id}` — Hard delete issue
 
 ---
 
-## 🧪 Testing
 
-Automated tests are written using pytest and focus on:
-- optimistic concurrency conflicts
-- transactional rollback behavior
-- CSV validation correctness
 
-The test suite prioritizes correctness over coverage.
+## Project Setup
 
----
+### Prerequisites
 
-## 🏁 Setup Instructions
-
-1. Clone the repository
-2. Create a virtual environment and install dependencies
-3. Configure PostgreSQL connection
-4. Run database migrations using Alembic
-5. Start the FastAPI server
-
-Detailed setup steps are provided in comments and configuration files.
+* Python **3.10+**
+* PostgreSQL
+* Git
+* Virtual environment tool (`venv`)
 
 ---
 
-## 📌 Notes
+### 1️⃣ Clone the Repository
 
-- This project is intentionally backend-only.
-- Authentication is simplified to focus on data correctness.
-- Code emphasizes readability and explainability over advanced abstractions.
+```bash
+git clone <repo-url>
+cd issue-management-system
+```
 
 ---
 
-## 👤 Author
+### 2️⃣ Create & Activate Virtual Environment
 
-**Pratik**  
+```bash
+python -m venv venv
+```
+
+**Windows**
+
+```bash
+venv\Scripts\activate
+```
+
+**Linux / macOS**
+
+```bash
+source venv/bin/activate
+```
+
+---
+
+### 3️⃣ Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### 4️⃣ Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URL=postgresql+psycopg2://username:password@localhost:5432/issue_db
+```
+
+> PostgreSQL can be local or hosted (e.g., Supabase).
+
+---
+
+### 5️⃣ Run Database Migrations
+
+```bash
+alembic upgrade head
+```
+
+This creates all required tables and schema.
+
+---
+
+### 6️⃣ Start the Server
+
+```bash
+uvicorn app.main:app --reload
+```
+
+API will be available at:
+
+```
+http://127.0.0.1:8000
+```
+
+Swagger UI:
+
+```
+http://127.0.0.1:8000/docs
+```
+
+---
+
+### 7️⃣ Run Tests (Optional but Recommended)
+
+```bash
+pytest
+```
+
+---
+
+### Notes 
+
+* All schema changes are managed via **Alembic**
+* No manual DB setup required beyond configuring `DATABASE_URL`
+* API is intentionally backend-only to focus on correctness and concurrency
+
+---
+
+##  Pending / Future Work
+
+The following endpoints were **intentionally left out due to time constraints**, but the project structure fully supports adding them cleanly:
+
+### Planned Endpoints
+
+* `GET /issues/{id}` — Include comments & labels
+* `POST /issues/{id}/comments` — Add comments
+* `PUT /issues/{id}/labels` — Atomic label replacement
+* `POST /issues/bulk-status` — Transactional bulk updates
+* `POST /issues/import` — CSV issue import
+* `GET /reports/top-assignees` — Aggregated report
+* `GET /reports/latency` — Average resolution time
+
+### Why These Are Deferred
+
+* Priority was given to:
+
+  * Correct PATCH semantics
+  * Concurrency handling
+  * Code structure & correctness
+* All deferred features require **transactions and aggregation**, which can be added incrementally without refactoring core logic
+
+
+
+---
+
+
+##  Notes 
+
+* Authentication is intentionally omitted to focus on **data correctness**
+* The project emphasizes:
+
+  * Concurrency safety
+  * Clean update semantics
+  * Real-world backend patterns
+---
+
+
+###  Evaluation Alignment
+
+**API Correctness**
+
+* Full CRUD for issues
+* Filtering + pagination on list endpoint
+* Proper HTTP methods and status codes
+
+**Concurrency & Transactions**
+
+* Optimistic locking using `version` field
+* PATCH rejects stale updates with `409 Conflict`
+* Prevents lost updates under concurrent clients
+
+**Code Structure & Clarity**
+
+* Clear separation: routing, schemas, DB logic
+* Minimal ORM usage for readability
+* Predictable project layout
+
+**Error Handling & Validation**
+
+* Validation of foreign keys (`assigned_to`)
+* Consistent `400 / 404 / 409` responses
+* No silent failures
+
+**Tests & Documentation**
+
+* Focused pytest cases for concurrency & integrity
+* Clear setup and API documentation in README
+
+
+---
+
+##  Author
+
+**PRATIK PATIL**
+
 Backend Intern Assignment
+
+---

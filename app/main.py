@@ -1,20 +1,14 @@
-from fastapi import FastAPI, Depends,Query
+from typing import Optional
+
+from fastapi import FastAPI, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import Base, engine
 from app.deps import get_db
-from app.models import Issue
-from app.schemas import IssueCreate, IssueResponse
-from fastapi import HTTPException
-from typing import Optional
 
-from app.schemas import UserCreate, UserResponse
-from app.crud import create_user, get_users, list_issues, delete_issue
-from app.models import User
-
-from app.schemas import IssuePatch
-from app.crud import patch_issue
-
+from app.models import Issue, User
+from app.schemas import (IssueCreate,IssuePatch,IssueResponse,UserCreate,UserResponse,)
+from app.crud import (create_user,get_users,list_issues,patch_issue,delete_issue,)
 
 app = FastAPI(title="Issue Management System")
 
