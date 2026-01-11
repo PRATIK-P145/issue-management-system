@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from models import Issue, User
-from schemas import IssueCreate
+from app.models import Issue, User
+from app.schemas import IssueCreate, IssuePatch
 from fastapi import HTTPException
 
 
@@ -69,6 +69,7 @@ def list_issues(
         },
     }
 
+
 def create_user(db: Session, name: str, email: str):
     existing = db.query(User).filter(User.email == email).first()
     if existing:
@@ -83,3 +84,38 @@ def create_user(db: Session, name: str, email: str):
 
 def get_users(db: Session):
     return db.query(User).order_by(User.id).all()
+
+def patch_issue(db: Session, issue_id: int, patch: IssuePatch):
+    issue = db.query(Issue).filter(Issue.id == issue_id).first()
+
+    if not issue:
+        raise HTTPException(status_code=404, detail="Issue not found")
+
+    if patch.version is None:
+        raise HTTPException(400, "version is required for PATCH")
+
+    if issue.version != patch.version:
+        raise HTTPException(
+            status_code=409,
+            detail="Issue was modified by another request"
+        )
+
+    # Validate assigned user (only if provided)
+    if patch.assigned_to is not None:
+        user = db.query(User).filter(User.id == patch.assigned_to).first()
+        if not user:
+            raise HTTPException(status_code=400, detail="Assigned user not found")
+
+    # Partial update (PATCH behavior)
+    update_data = patch.model_dump(exclude_unset=True)
+    update_data.pop("version")  # version handled manually
+
+    for field, value in update_data.items():
+        setattr(issue, field, value)
+
+    issue.version += 1  
+
+    db.commit()
+    db.refresh(issue)
+
+    return issue

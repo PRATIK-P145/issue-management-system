@@ -1,5 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Optional
 
 class IssueCreate(BaseModel):
     title: str
@@ -8,6 +9,16 @@ class IssueCreate(BaseModel):
     priority: str | None = None
     assigned_to: int | None = None
 
+class IssuePatch(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    priority: str | None = None
+    assigned_to: int | None = None
+    version: int= Field(...,   description="Current issue version. Must match latest GET /issues/{id}")
+
+    class Config:
+        from_attributes = True
 
 class UserCreate(BaseModel):
     name: str

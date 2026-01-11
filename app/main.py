@@ -9,8 +9,11 @@ from fastapi import HTTPException
 from typing import Optional
 
 from app.schemas import UserCreate, UserResponse
-from app.crud import create_user, get_users
+from app.crud import create_user, get_users, list_issues
 from app.models import User
+
+from app.schemas import IssuePatch
+from app.crud import patch_issue
 
 
 app = FastAPI(title="Issue Management System")
@@ -47,3 +50,11 @@ def create_user_api(user: UserCreate, db: Session = Depends(get_db)):
 @app.get("/users", response_model=list[UserResponse])
 def list_users(db: Session = Depends(get_db)):
     return get_users(db)
+
+@app.patch("/issues/{issue_id}", response_model=IssueResponse)
+def update_issue(
+    issue_id: int,
+    patch: IssuePatch,
+    db: Session = Depends(get_db)
+):
+    return patch_issue(db, issue_id, patch)
