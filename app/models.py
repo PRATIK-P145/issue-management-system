@@ -13,12 +13,9 @@ class Issue(Base):
 
     priority = Column(String, server_default="medium",nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime,server_default=func.now(),onupdate=func.now())
 
-    updated_at = Column(
-        DateTime,
-        server_default=func.now(),
-        onupdate=func.now()
-    )
+    version = Column(Integer, nullable=False, server_default="1")
 
     assigned_to = Column(
         Integer,
@@ -27,7 +24,10 @@ class Issue(Base):
         index=True
     )
 
-    assignee = relationship("User")
+    assignee = relationship("User",passive_deletes=True,back_populates="issues")
+    # in Issue model
+    version = Column(Integer, nullable=False, default=1)
+
 
 class User(Base):
     __tablename__ = "users"
@@ -35,3 +35,5 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
+
+    issues = relationship("Issue", back_populates="assignee")
