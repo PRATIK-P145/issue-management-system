@@ -5,12 +5,20 @@ class IssueCreate(BaseModel):
     title: str
     description: str | None = None
 
+class UserCreate(BaseModel):
+    name: str
+    email: str
+
+
 class UserResponse(BaseModel):
     id: int
     name: str
     email: str
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True
+    }
+
 
 class IssueResponse(BaseModel):
     id: int
