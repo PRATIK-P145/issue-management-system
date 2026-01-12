@@ -5,6 +5,21 @@
 A backend service for managing issues with a strong focus on **data consistency, concurrency safety, and clean API design**.
 
 ---
+
+## 🌐 Live Deployment
+
+**IssueOps** — a concurrency-safe issue management API focused on **correctness**, **versioned updates**, and **clean backend architecture**.
+
+🔗 **Live API Base URL:** `https://issueops.onrender.com`
+
+ **Interactive API Docs (Swagger UI):** 
+ ```
+ https://issueops.onrender.com/docs
+ ```
+
+> The deployed API mirrors the local setup, including optimistic concurrency control, audit fields, and strict validation. Designed for reliability under concurrent usage.
+
+---
 ## Contents
 
 - [Key Features](#key-features)
@@ -18,6 +33,7 @@ A backend service for managing issues with a strong focus on **data consistency,
 - [Author](#author)
 
 ---
+
 
 ## Key  Features
 
